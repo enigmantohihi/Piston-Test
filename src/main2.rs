@@ -5,7 +5,7 @@ const WINDOW_TITLE: &str = "OTO GAME";
 
 const WINDOW_SIZE: Size = Size {
     width: 640.0,
-    height: 480.0,
+    height: 360.0,
 };
 
 const END_POS: [Position;2] = [
@@ -14,6 +14,32 @@ const END_POS: [Position;2] = [
 ];
 
 const FPS: u64 = 60;
+
+const PATH_LIST: [&str;4] = [
+    "./asset/sprite/naruhodo1.jpg",
+    "./asset/sprite/naruhodo2.jpg",
+    "./asset/sprite/naruhodo3.jpg",
+    "./asset/sprite/naruhodo4.jpg",
+];
+
+struct Naruhodo {
+    textures: Vec<G2dTexture>,
+    index: u32,
+    scale: f64,
+}
+
+impl Naruhodo {
+    fn draw(&self, c: Context, g: &mut G2d) {
+        let transform = c
+            .transform
+            .trans(
+                0.0,
+                0.0,
+            )
+            .scale(self.scale, self.scale);
+        image(&self.textures[self.index as usize], transform, g);
+    }
+}
 
 struct Notes {
     pos: Position,
@@ -96,6 +122,26 @@ pub fn main() {
     window.events.set_max_fps(FPS);
     window.events.set_ups(FPS);
 
+    // let textures = create_texture(window, &PATH_LIST.iter().map(|&s| s.into()).collect());
+    let mut textures: Vec<G2dTexture> = Vec::new();
+    for path in PATH_LIST {
+        let tex = Texture::from_path(
+                &mut window.create_texture_context(),
+                path,
+                Flip::None,
+                &TextureSettings::new(),
+            )
+            .unwrap();
+        textures.push(tex);
+    };
+
+
+    let mut naruhodo = Naruhodo {
+        textures: textures,
+        index: 1,
+        scale: 0.5,
+    };
+
     let mut notes = Notes {
         pos: Position { x: (0) as i32, y: (0) as i32},
         radius: 40.0,
@@ -113,6 +159,7 @@ pub fn main() {
             Event::Loop(Loop::Render(_)) => {
                 window.draw_2d(&e, |c, g, _| {
                     clear(WHITE, g);
+                    naruhodo.draw(c, g);
                     notes.draw(c, g);
                     // rectangle(BLACK, square, transform, g)
                     draw_shapes(c, g, 1);
