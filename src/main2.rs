@@ -39,6 +39,13 @@ impl Naruhodo {
             .scale(self.scale, self.scale);
         image(&self.textures[self.index as usize], transform, g);
     }
+
+    fn animation(&mut self, key: &ArrowKeysState) {
+        if key.up {
+            let a = self.index + 1;
+            self.index = (a % self.textures.len());
+        }
+    }
 }
 
 struct Notes {
@@ -70,6 +77,57 @@ impl Notes {
             width: WINDOW_SIZE.width,
             height: WINDOW_SIZE.height,
         };
+    }
+}
+
+struct ArrowKeysState {
+    up: bool,
+    down: bool,
+    left: bool,
+    right: bool,
+}
+impl ArrowKeysState {
+    fn new() -> ArrowKeysState {
+        return ArrowKeysState {
+            up: false,
+            down: false,
+            left: false,
+            right: false,
+        };
+    }
+    ///`PistonWindow::ButtonArgs`から状態をセットする
+    fn set(&mut self, key: &ButtonArgs) {
+        match key.button {
+            Button::Keyboard(Key::Up) => {
+                self.up = if key.state == ButtonState::Press {
+                    true
+                } else {
+                    false
+                };
+            }
+            Button::Keyboard(Key::Down) => {
+                self.down = if key.state == ButtonState::Press {
+                    true
+                } else {
+                    false
+                };
+            }
+            Button::Keyboard(Key::Left) => {
+                self.left = if key.state == ButtonState::Press {
+                    true
+                } else {
+                    false
+                };
+            }
+            Button::Keyboard(Key::Right) => {
+                self.right = if key.state == ButtonState::Press {
+                    true
+                } else {
+                    false
+                };
+            }
+            _ => {}
+        }
     }
 }
 
@@ -139,7 +197,7 @@ pub fn main() {
     let mut naruhodo = Naruhodo {
         textures: textures,
         index: 1,
-        scale: 0.5,
+        scale: 0.25,
     };
 
     let mut notes = Notes {
@@ -153,6 +211,8 @@ pub fn main() {
         active: true,
         finish: false,
     };
+
+    let mut arrow_keys = ArrowKeysState::new();
 
     while let Some(e) = window.next() {
         match e {
@@ -169,6 +229,13 @@ pub fn main() {
 
             Event::Loop(Loop::Update(_)) => {
                 notes.pos.x += 1;
+            }
+
+            Event::Input(i, _) => {
+                //入力関係
+                if let Input::Button(key) = i {
+                    arrow_keys.set(&key);
+                }
             }
 
             _ => {}
