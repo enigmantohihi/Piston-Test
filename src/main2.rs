@@ -24,7 +24,11 @@ const PATH_LIST: [&str;4] = [
 
 struct Naruhodo {
     textures: Vec<G2dTexture>,
+    tex_index: Vec<u32>,
+    change_times: Vec<u64>,
+    time_count: u64,
     index: u32,
+    is_animation: bool,
     scale: f64,
 }
 
@@ -37,14 +41,42 @@ impl Naruhodo {
                 0.0,
             )
             .scale(self.scale, self.scale);
-        image(&self.textures[self.index as usize], transform, g);
+        image(&self.textures[self.index()], transform, g);
     }
 
-    fn animation(&mut self, key: &ArrowKeysState) {
+    fn animation_set(&mut self, key: &ArrowKeysState, number: u32) {
         if key.up {
-            let a = self.index + 1;
-            self.index = (a % self.textures.len());
+            self.is_animation = true;
+            match number {
+                0 => {
+                    self.tex_index = vec![1,2];
+                    self.change_times = vec![(3*FPS), 0];
+                }
+
+                1 => {
+                    self.tex_index = vec![0,3];
+                    self.change_times = vec![(3*FPS), 0];
+                }
+                
+                _ => {}
+            }
         }
+    }
+
+    fn increase_count(&mut self) {
+        self.time_count += (1*FPS);
+        if self.time_count >= self.change_times[self.index as usize] {
+            self.time_count = 0;
+            self.index = (self.index+1) % self.tex_index.len() as u32;
+            if self.index == self.tex_index.len() as u32 - 1{
+                self.is_animation = false;
+            }
+        }
+    }
+
+    fn index(&self) -> usize{
+        let tex_index = self.tex_index[self.index as usize];
+         return tex_index as usize;
     }
 }
 
@@ -196,8 +228,12 @@ pub fn main() {
 
     let mut naruhodo = Naruhodo {
         textures: textures,
-        index: 1,
-        scale: 0.25,
+        tex_index: vec![0],
+        change_times: vec![0],
+        time_count: 0,
+        index: 0,
+        is_animation: false,
+        scale: 0.5,
     };
 
     let mut notes = Notes {
@@ -220,6 +256,7 @@ pub fn main() {
                 window.draw_2d(&e, |c, g, _| {
                     clear(WHITE, g);
                     naruhodo.draw(c, g);
+                    if naruhodo.is_animation {naruhodo.increase_count()}
                     notes.draw(c, g);
                     // rectangle(BLACK, square, transform, g)
                     draw_shapes(c, g, 1);
@@ -229,6 +266,7 @@ pub fn main() {
 
             Event::Loop(Loop::Update(_)) => {
                 notes.pos.x += 1;
+                naruhodo.animation_set(&arrow_keys, 1);
             }
 
             Event::Input(i, _) => {
